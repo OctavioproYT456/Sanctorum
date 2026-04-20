@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SANCTORUM | Panel Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="admin-container card">
+        <h1>Generador de Datos</h1>
+        <p>Rellena los campos para generar el archivo JSON correspondiente.</p>
+        
+        <input type="text" id="nombre" placeholder="Nombre completo del Santo">
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="nac" placeholder="Año de Nacimiento">
+            <input type="text" id="fall" placeholder="Año de Fallecimiento">
+        </div>
+        <textarea id="desc" rows="10" placeholder="Escribe la biografía completa aquí..."></textarea>
+        
+        <button onclick="generarJSON()">Generar Código JSON</button>
+
+        <div id="resultado" style="display:none; margin-top:30px;">
+            <p style="color: var(--accent-gold);">✓ Copia este código y guárdalo en <b>/data/</b></p>
+            <pre id="codigo-salida" style="background: #000; padding: 20px; border-radius: 10px; color: var(--accent); border: 1px solid var(--accent); overflow-x: auto;"></pre>
+        </div>
+    </div>
+
+    <script>
+        function generarJSON() {
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                nacimiento: document.getElementById('nac').value,
+                fallecimiento: document.getElementById('fall').value,
+                descripcion: document.getElementById('desc').value
+            };
+            
+            document.getElementById('codigo-salida').innerText = JSON.stringify(data, null, 4);
+            document.getElementById('resultado').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+
