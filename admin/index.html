@@ -2,42 +2,82 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SANCTORUM | Panel Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanctorum | Panel de Control</title>
     <link rel="stylesheet" href="/Sanctorum/style.css">
 </head>
 <body>
-    <div class="admin-container card">
-        <h1>Generador de Datos</h1>
-        <p>Rellena los campos para generar el archivo JSON correspondiente.</p>
-        
-        <input type="text" id="nombre" placeholder="Nombre completo del Santo">
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="nac" placeholder="Año de Nacimiento">
-            <input type="text" id="fall" placeholder="Año de Fallecimiento">
-        </div>
-        <textarea id="desc" rows="10" placeholder="Escribe la biografía completa aquí..."></textarea>
-        
-        <button onclick="generarJSON()">Generar Código JSON</button>
 
-        <div id="resultado" style="display:none; margin-top:30px;">
-            <p style="color: var(--accent-gold);">✓ Copia este código y guárdalo en <b>/data/</b></p>
-            <pre id="codigo-salida" style="background: #000; padding: 20px; border-radius: 10px; color: var(--accent); border: 1px solid var(--accent); overflow-x: auto;"></pre>
+    <div class="admin-card" style="max-width: 700px; margin: 40px auto; background: #0f1014; padding: 30px; border-radius: 20px; border: 1px solid #1f2025;">
+        <h2 style="color: #00f2ff; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 5px;">Nuevo Registro</h2>
+        <p id="info-id" style="color: #ffcc00; font-weight: bold; margin-bottom: 20px; font-size: 0.9rem;">Cargando base de datos...</p>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; opacity: 0.6;">ID del archivo:</label>
+                <input type="text" id="id-final" readonly style="background: #000; color: #00f2ff; border: 1px solid #00f2ff; cursor: not-allowed; font-weight: bold;">
+            </div>
+            <div style="flex: 3;">
+                <label style="font-size: 0.8rem; opacity: 0.6;">Nombre del Santo:</label>
+                <input type="text" id="n" placeholder="Ej: San Judas Tadeo">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; opacity: 0.6;">Nacimiento:</label>
+                <input type="text" id="nac" placeholder="Año o Siglo">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; opacity: 0.6;">Fallecimiento:</label>
+                <input type="text" id="fall" placeholder="Año o Siglo">
+            </div>
+        </div>
+
+        <label style="font-size: 0.8rem; opacity: 0.6;">Biografía / Descripción:</label>
+        <textarea id="d" rows="10" placeholder="Escribe aquí la historia detallada..."></textarea>
+        
+        <button onclick="gen()" style="background: #00f2ff; color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Generar JSON</button>
+
+        <div id="res" style="display:none; margin-top:25px;">
+            <p style="color: #00f2ff; font-size: 0.8rem; margin-bottom: 10px;">✓ Código generado. Crea el archivo <b id="file-name"></b> en /data/</p>
+            <pre id="out" style="background: #000; padding: 15px; border-radius: 10px; border: 1px dashed #00f2ff; color: #00f2ff; white-space: pre-wrap; font-size: 13px; font-family: monospace;"></pre>
+            <p style="color: #ffcc00; font-size: 0.8rem; margin-top: 10px;">⚠️ Recuerda actualizar el valor de 'libs' en config.js a <span id="next-lib"></span></p>
         </div>
     </div>
 
+    <script src="/Sanctorum/config.js"></script>
     <script>
-        function generarJSON() {
+        // Al cargar, leemos la variable 'libs' de config.js
+        window.onload = () => {
+            if (typeof libs !== 'undefined') {
+                const siguienteID = libs + 1;
+                document.getElementById('id-final').value = siguienteID;
+                document.getElementById('info-id').innerText = `Registros actuales: ${libs} | SIGUIENTE ID SUGERIDO: ${siguienteID}`;
+            } else {
+                document.getElementById('info-id').innerText = "Error: No se pudo leer config.js";
+                document.getElementById('info-id').style.color = "red";
+            }
+        };
+
+        function gen() {
+            const id = document.getElementById('id-final').value;
             const data = {
-                nombre: document.getElementById('nombre').value,
+                nombre: document.getElementById('n').value,
                 nacimiento: document.getElementById('nac').value,
                 fallecimiento: document.getElementById('fall').value,
-                descripcion: document.getElementById('desc').value
+                descripcion: document.getElementById('d').value
             };
-            
-            document.getElementById('codigo-salida').innerText = JSON.stringify(data, null, 4);
-            document.getElementById('resultado').style.display = 'block';
+
+            const jsonStr = JSON.stringify(data, null, 4);
+            document.getElementById('out').innerText = jsonStr;
+            document.getElementById('file-name').innerText = `${id}.json`;
+            document.getElementById('next-lib').innerText = id;
+            document.getElementById('res').style.display = 'block';
+
+            // Scroll suave hacia el resultado
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
     </script>
 </body>
 </html>
-
