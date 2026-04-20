@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANCTORUM | Archivo Digital Católico</title>
+    <title>SANCTORUM | Archivo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav id="menu-santos">
-    <div class="header-menu">
-        <h2>SANCTORUM</h2>
-    </div>
-    <div id="lista-items">
-        </div>
+    <div class="header-menu"><h2>SANCTORUM</h2></div>
+    <div id="lista-items"></div>
 </nav>
 
 <main>
@@ -23,77 +20,74 @@
         <span class="dates" id="fechas-view"></span>
         <div class="desc" id="desc-view"></div>
     </div>
-    
-    <div id="placeholder" style="align-self: center; text-align: center; opacity: 0.3;">
-        <p style="letter-spacing: 5px;">SELECCIONE UN REGISTRO</p>
+    <div id="placeholder" style="margin-top: 20vh; opacity: 0.4; text-align: center;">
+        <p>SELECCIONE UN REGISTRO</p>
     </div>
 </main>
 
 <script src="config.js"></script>
 <script>
-    async function detectarImagen(id) {
-        const extensiones = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
-        for (let ext of extensiones) {
-            let ruta = `./imgs/${id}.${ext}`;
+    async function getImg(id) {
+        const ext = ['png', 'jpg', 'jpeg', 'webp'];
+        for (let e of ext) {
+            let path = `./imgs/${id}.${e}`;
             try {
-                let respuesta = await fetch(ruta, { method: 'HEAD' });
-                if (respuesta.ok) return ruta;
-            } catch (e) {}
+                let res = await fetch(path, { method: 'HEAD' });
+                if (res.ok) return path;
+            } catch (err) {}
         }
         return null;
     }
 
-    async function cargarMenu() {
-        const lista = document.getElementById('lista-items');
-        
-        for (let i = 1; i <= libs; i++) {
-            try {
-                const res = await fetch(`./data/${i}.json`);
-                if (!res.ok) continue;
-                
-                const datos = await res.json();
-                const rutaImg = await detectarImagen(i);
+    // Función para cambiar de santo y actualizar la URL sin recargar
+    async function seleccionarSanto(id, pushState = true) {
+        try {
+            const res = await fetch(`./data/${id}.json`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const img = await getImg(id);
 
-                const div = document.createElement('div');
-                div.className = 'item-menu';
-                div.innerHTML = `
-                    <img src="${rutaImg || 'https://via.placeholder.com/150'}" class="img-mini">
-                    <div>
-                        <div style="color:white; font-weight:bold; font-size: 0.9rem;">${datos.nombre}</div>
-                        <small style="color:var(--accent); opacity:0.7">ID: #${i}</small>
-                    </div>
-                `;
-                
-                div.onclick = () => mostrarDetalle(datos, rutaImg);
-                lista.appendChild(div);
-            } catch (err) {
-                console.warn(`No se pudo cargar el ID ${i}`);
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('visor').style.display = 'block';
+            document.getElementById('nombre-view').innerText = data.nombre;
+            document.getElementById('fechas-view').innerText = `${data.nacimiento} — ${data.fallecimiento}`;
+            document.getElementById('desc-view').innerText = data.descripcion;
+            document.getElementById('img-view').src = img || '';
+
+            // Actualizar URL (?p=ID)
+            if (pushState) {
+                const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?p=${id}`;
+                window.history.pushState({path:newurl}, '', newurl);
             }
+        } catch (e) { console.error("Error al cargar datos"); }
+    }
+
+    async function init() {
+        const list = document.getElementById('lista-items');
+        
+        // Cargar menú
+        for (let i = 1; i <= libs; i++) {
+            const res = await fetch(`./data/${i}.json`);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const img = await getImg(i);
+
+            const item = document.createElement('div');
+            item.className = 'item-menu';
+            item.innerHTML = `<img src="${img || ''}" class="img-mini"><span>${data.nombre}</span>`;
+            item.onclick = () => seleccionarSanto(i);
+            list.appendChild(item);
+        }
+
+        // REVISAR URL AL CARGAR (?p=X)
+        const params = new URLSearchParams(window.location.search);
+        const p = params.get('p');
+        if (p && parseInt(p) <= libs) {
+            seleccionarSanto(p, false);
         }
     }
 
-    function mostrarDetalle(datos, img) {
-        document.getElementById('placeholder').style.display = 'none';
-        const visor = document.getElementById('visor');
-        visor.style.display = 'block';
-        
-        document.getElementById('nombre-view').innerText = datos.nombre;
-        document.getElementById('fechas-view').innerText = `${datos.nacimiento} — ${datos.fallecimiento}`;
-        document.getElementById('desc-view').innerText = datos.descripcion;
-        
-        const imgEl = document.getElementById('img-view');
-        if (img) {
-            imgEl.src = img;
-            imgEl.style.display = 'block';
-        } else {
-            imgEl.style.display = 'none';
-        }
-        
-        document.querySelector('main').scrollTop = 0;
-    }
-
-    window.onload = cargarMenu;
+    window.onload = init;
 </script>
 </body>
 </html>
-
