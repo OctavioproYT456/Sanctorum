@@ -44,8 +44,13 @@
         <button onclick="gen()">Generar JSON</button>
 
         <div id="res" style="display:none;">
-            <p style="color:var(--accent); font-size:0.8rem;">Copia esto en <b>/data/<span id="file-name"></span></b>:</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <p style="color:var(--accent); font-size:0.8rem; margin:0;">Copia esto en <b>/data/<span id="file-name"></span></b>:</p>
+                <button onclick="copiarJSON()" id="btn-copy" style="width: auto; padding: 5px 15px; font-size: 0.7rem; margin: 0;">Copiar Código</button>
+            </div>
+            
             <pre id="out"></pre>
+            
             <p style="color:var(--gold); font-size:0.8rem; margin-top:10px;">
                 Recuerda actualizar 'libs' a <b id="next-lib"></b> en config.js
             </p>
@@ -76,6 +81,30 @@
             document.getElementById('file-name').innerText = id + ".json";
             document.getElementById('next-lib').innerText = id;
             document.getElementById('res').style.display = 'block';
+            
+            // Resetear el botón de copiar si se genera uno nuevo
+            const btn = document.getElementById('btn-copy');
+            btn.innerText = "Copiar Código";
+            btn.style.background = "var(--accent)";
+        }
+
+        async function copiarJSON() {
+            const texto = document.getElementById('out').innerText;
+            const btn = document.getElementById('btn-copy');
+            
+            try {
+                await navigator.clipboard.writeText(texto);
+                btn.innerText = "¡Copiado!";
+                btn.style.background = "#00ff88"; // Cambio de color a verde éxito
+                
+                // Regresar a la normalidad después de 2 segundos
+                setTimeout(() => {
+                    btn.innerText = "Copiar Código";
+                    btn.style.background = "var(--accent)";
+                }, 2000);
+            } catch (err) {
+                alert("Error al copiar. Por favor, selecciona el texto manualmente.");
+            }
         }
     </script>
 </body>
