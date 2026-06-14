@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- Botón Hamburguesa (Solo visible en móviles) -->
 <button id="hamburger-btn" aria-label="Abrir menú">
     <span></span>
     <span></span>
@@ -17,6 +18,7 @@
 <nav id="menu-santos">
     <div class="header-menu">
         <h2>SANCTORUM</h2>
+        <!-- Buscador de Santos -->
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Buscar santo...">
         </div>
@@ -69,7 +71,7 @@
         return null;
     }
 
-    // Cambiar de santo, actualizar URL y guardar en LocalStorage
+    // Cambiar de santo y actualizar URL
     async function seleccionarSanto(id, pushState = true) {
         try {
             const res = await fetch(`./data/${id}.json`);
@@ -84,15 +86,12 @@
             document.getElementById('desc-view').innerText = data.descripcion;
             document.getElementById('img-view').src = img || '';
 
-            // Guardar ID del último santo visto
-            localStorage.setItem('ultimoSanto', id);
-
             // Resaltar ítem activo en el menú
             document.querySelectorAll('.item-menu').forEach(el => el.classList.remove('item-active'));
             const activeItem = document.querySelector(`.item-menu[data-id="${id}"]`);
             if (activeItem) activeItem.classList.add('item-active');
 
-            // Cerrar menú en móviles al seleccionar
+            // Cerrar menú en móviles al seleccionar un santo
             if (window.innerWidth <= 768) {
                 toggleMenu(false);
             }
@@ -132,21 +131,16 @@
             list.appendChild(item);
         }
 
-        // Lógica de carga inicial e inspección de LocalStorage
+        // REVISAR URL AL CARGAR (?p=X)
         const params = new URLSearchParams(window.location.search);
         const p = params.get('p');
-        const localSanto = localStorage.getItem('ultimoSanto');
 
         if (p && parseInt(p) <= libs) {
-            // Si hay parámetro en la URL, manda este primero
+            // SI HAY UN VALOR EN EL PARÁMETRO: Carga el santo y mantiene el menú cerrado en móvil
             seleccionarSanto(p, false);
             if (window.innerWidth <= 768) toggleMenu(false);
-        } else if (localSanto && parseInt(localSanto) <= libs) {
-            // Si hay algo en localStorage, carga ese santo y mantiene el menú cerrado en móvil
-            seleccionarSanto(localSanto, false);
-            if (window.innerWidth <= 768) toggleMenu(false);
         } else {
-            // Si está vacío, abre el menú en móvil para que elija
+            // SI NO HAY PARÁMETRO: Abre el menú automáticamente en móvil para elegir
             if (window.innerWidth <= 768) toggleMenu(true);
         }
     }
