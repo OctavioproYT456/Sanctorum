@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANCTORUM | Archivo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button id="hamburger-btn" aria-label="Abrir menú">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<nav id="menu-santos">
+    <div class="header-menu">
+        <h2>SANCTORUM</h2>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Buscar santo...">
+        </div>
+    </div>
+    <div id="lista-items"></div>
+</nav>
+
+<main>
+    <div id="visor" class="card" style="display: none;">
+        <div class="img-container">
+            <img id="img-view" class="main-img" alt="Imagen del santo">
+        </div>
+        <h1 id="nombre-view"></h1>
+        <span class="dates" id="fechas-view"></span>
+        <div class="desc" id="desc-view"></div>
+    </div>
+    <div id="placeholder" style="margin-top: 20vh; opacity: 0.4; text-align: center;">
+        <p>SELECCIONE UN REGISTRO</p>
+    </div>
+</main>
+
+<script src="config.js"></script>
+<script>
+    const menu = document.getElementById('menu-santos');
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const searchInput = document.getElementById('search-input');
+
+    // Control del Menú Hamburguesa
+    function toggleMenu(forceOpen = null) {
+        if (forceOpen !== null) {
+            menu.classList.toggle('open', forceOpen);
+            hamburgerBtn.classList.toggle('active', forceOpen);
+        } else {
+            menu.classList.toggle('open');
+            hamburgerBtn.classList.toggle('active');
+        }
+    }
+
+    hamburgerBtn.onclick = () => toggleMenu();
+
+    async function getImg(id) {
+        const ext = ['png', 'jpg', 'jpeg', 'webp'];
+        for (let e of ext) {
+            let path = `./imgs/${id}.${e}`;
+            try {
+                let res = await fetch(path, { method: 'HEAD' });
+                if (res.ok) return path;
+            } catch (err) {}
+        }
+        return null;
+    }
+
+    // Cambiar de santo, actualizar URL y guardar en LocalStorage
+    async function seleccionarSanto(id, pushState = true) {
+        try {
+            const res = await fetch(`./data/${id}.json`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const img = await getImg(id);
+
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('visor').style.display = 'block';
+            document.getElementById('nombre-view').innerText = data.nombre;
+            document.getElementById('fechas-view').innerText = `${data.nacimiento} — ${data.fallecimiento}`;
+            document.getElementById('desc-view').innerText = data.descripcion;
+            document.getElementById('img-view').src = img || '';
+
+            // Guardar ID del último santo visto
+            localStorage.setItem('ultimoSanto', id);
+
+            // Resaltar ítem activo en el menú
+            document.querySelectorAll('.item-menu').forEach(el => el.classList.remove('item-active'));
+            const activeItem = document.querySelector(`.item-menu[data-id="${id}"]`);
+            if (activeItem) activeItem.classList.add('item-active');
+
+            // Cerrar menú en móviles al seleccionar
+            if (window.innerWidth <= 768) {
+                toggleMenu(false);
+            }
+
+            // Actualizar URL (?p=ID)
+            if (pushState) {
+                const newurl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?p=${id}`;
+                window.history.pushState({path:newurl}, '', newurl);
+            }
+        } catch (e) { console.error("Error al cargar datos"); }
+    }
+
+    // Buscador en tiempo real
+    searchInput.oninput = () => {
+        const query = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        document.querySelectorAll('.item-menu').forEach(item => {
+            const name = item.querySelector('span').innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            item.style.display = name.includes(query) ? 'flex' : 'none';
+        });
+    };
+
+    async function init() {
+        const list = document.getElementById('lista-items');
+        
+        // Cargar menú lateral
+        for (let i = 1; i <= libs; i++) {
+            const res = await fetch(`./data/${i}.json`);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const img = await getImg(i);
+
+            const item = document.createElement('div');
+            item.className = 'item-menu';
+            item.setAttribute('data-id', i);
+            item.innerHTML = `<img src="${img || ''}" class="img-mini" alt=""><span>${data.nombre}</span>`;
+            item.onclick = () => seleccionarSanto(i);
+            list.appendChild(item);
+        }
+
+        // Lógica de carga inicial e inspección de LocalStorage
+        const params = new URLSearchParams(window.location.search);
+        const p = params.get('p');
+        const localSanto = localStorage.getItem('ultimoSanto');
+
+        if (p && parseInt(p) <= libs) {
+            // Si hay parámetro en la URL, manda este primero
+            seleccionarSanto(p, false);
+            if (window.innerWidth <= 768) toggleMenu(false);
+        } else if (localSanto && parseInt(localSanto) <= libs) {
+            // Si hay algo en localStorage, carga ese santo y mantiene el menú cerrado en móvil
+            seleccionarSanto(localSanto, false);
+            if (window.innerWidth <= 768) toggleMenu(false);
+        } else {
+            // Si está vacío, abre el menú en móvil para que elija
+            if (window.innerWidth <= 768) toggleMenu(true);
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
